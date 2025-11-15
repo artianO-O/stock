@@ -1,0 +1,15 @@
+{
+  "name": "stock-trading-guide",
+  "version": "1.0.0",
+  "description": "股票短线与趋势战法指南",
+  "type": "module",
+  "scripts": {
+    "dev": "vitepress dev docs",
+    "build": "vitepress build docs",
+    "preview": "vitepress preview docs"
+  },
+  "devDependencies": {
+    "vitepress": "^1.0.0"
+  }
+}
+

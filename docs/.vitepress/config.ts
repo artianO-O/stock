@@ -8,8 +8,8 @@ export default defineConfig({
   title: '股票战法指南',
   description: '股票短线与趋势交易战法详解',
   
-  // 外观设置 - 默认深色主题
-  appearance: 'dark',
+  // 外观设置 - 启用主题切换（true = 可切换，默认浅色）
+  appearance: true,
   
   // 主题配置
   themeConfig: {

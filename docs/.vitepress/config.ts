@@ -17,7 +17,8 @@ export default defineConfig({
     nav: [
       { text: '首页', link: '/' },
       { text: '短线战法', link: '/short-term/' },
-      { text: '趋势战法', link: '/trend/' }
+      { text: '趋势战法', link: '/trend/' },
+      { text: '知名游资', link: '/游资/' }
     ],
     
     // 侧边栏
@@ -49,6 +50,19 @@ export default defineConfig({
             { text: '量能突破战法', link: '/trend/#6-量能突破战法' },
             { text: '波段操作战法', link: '/trend/#7-波段操作战法' },
             { text: '龙头战法', link: '/trend/#8-龙头战法' }
+          ]
+        }
+      ],
+      '/游资/': [
+        {
+          text: '知名游资心法',
+          items: [
+            { text: '退学炒股', link: '/游资/退学炒股' },
+            { text: '炒股养家', link: '/游资/炒股养家' },
+            { text: '赵老哥', link: '/游资/赵老哥' },
+            { text: '作手新一', link: '/游资/作手新一' },
+            { text: '方新侠', link: '/游资/方新侠' },
+            { text: '章建平', link: '/游资/章建平' }
           ]
         }
       ]

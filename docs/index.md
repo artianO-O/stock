@@ -13,10 +13,18 @@ hero:
       text: 趋势战法
       link: /trend/
     - theme: alt
-      text: 知名游资
-      link: /游资/
+      text: 短线交易学习
+      link: /学习路线/
 
 features:
+  - title: AI答疑解惑
+    details: 8个核心问题的详细解答，涵盖短线交易的各个方面，帮助您快速解决交易中的疑惑
+    link: /AI答疑解惑/
+    linkText: 查看问题
+  - title: 短线交易学习
+    details: 系统化的学习路线，从零基础到稳定盈利，包含四个阶段的学习内容和资源推荐
+    link: /学习路线/
+    linkText: 开始学习
   - title: 短线战法
     details: 8种专业短线交易战法，包括超预期、弱转强、爆量转一致等，适合快进快出的短线操作
   - title: 趋势战法

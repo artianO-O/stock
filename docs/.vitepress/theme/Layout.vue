@@ -1,6 +1,7 @@
 <script setup>
 import DefaultTheme from 'vitepress/theme'
 import ParticleBackground from './components/ParticleBackground.vue'
+import Live2DWidget from './components/Live2DWidget.vue'
 import { useData } from 'vitepress'
 
 const { Layout } = DefaultTheme
@@ -12,6 +13,7 @@ const { isDark } = useData()
     <template #layout-bottom>
       <ClientOnly>
         <ParticleBackground v-if="!isDark" />
+        <Live2DWidget :show="true" />
       </ClientOnly>
     </template>
   </Layout>

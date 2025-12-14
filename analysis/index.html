@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A股炒作分析系统</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --accent-color: #f59e0b;
+            --accent-secondary: #fb923c;
+            --border-color: #475569;
+            --success-color: #22c55e;
+            --danger-color: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* 导航栏样式 */
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 20px;
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 60px;
+        }
+
+        .nav-logo {
+            font-size: 1.3rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, var(--accent-color), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-tab {
+            padding: 10px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            background: transparent;
+            border: none;
+            transition: all 0.3s;
+        }
+
+        .nav-tab:hover {
+            color: var(--text-primary);
+            background: var(--bg-tertiary);
+        }
+
+        .nav-tab.active {
+            color: #000;
+            background: linear-gradient(135deg, var(--accent-color), var(--accent-secondary));
+            font-weight: 600;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* 页面模块 */
+        .page-section {
+            display: none;
+        }
+
+        .page-section.active {
+            display: block;
+        }
+
+        /* 通用卡片样式 */
+        .card {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 24px;
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+
+        .card-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+
+        /* 炒作日历样式 */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+        }
+
+        .month-card {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .month-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--card-color, var(--accent-color)), transparent);
+        }
+
+        .month-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+            border-color: var(--card-color, var(--accent-color));
+        }
+
+        .month-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .month-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .month-emoji {
+            font-size: 2rem;
+        }
+
+        .month-info h3 {
+            font-size: 1.5rem;
+            color: var(--text-primary);
+        }
+
+        .month-theme {
+            font-size: 0.9rem;
+            color: var(--card-color, var(--accent-color));
+            margin-top: 2px;
+        }
+
+        .confidence-badge {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--accent-color);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+        }
+
+        .sectors-section {
+            margin-bottom: 16px;
+        }
+
+        .section-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .sector-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .sector-tag {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .key-points {
+            margin-bottom: 16px;
+        }
+
+        .key-points ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .key-points li {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+            border-bottom: 1px solid rgba(71, 85, 105, 0.3);
+        }
+
+        .key-points li:last-child {
+            border-bottom: none;
+        }
+
+        .key-points li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: var(--card-color, var(--accent-color));
+        }
+
+        .events-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+
+        .event-tag {
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--success-color);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+        }
+
+        .warning-section {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 0.8rem;
+            color: var(--danger-color);
+        }
+
+        .warning-section::before {
+            content: '⚠️ ';
+        }
+
+        /* 妖股模块样式 */
+        .monster-filters {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .year-btn {
+            padding: 8px 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-primary);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .year-btn:hover {
+            border-color: var(--accent-color);
+            color: var(--text-primary);
+        }
+
+        .year-btn.active {
+            background: linear-gradient(135deg, var(--accent-color), var(--accent-secondary));
+            color: #000;
+            border-color: transparent;
+            font-weight: 600;
+        }
+
+        .monster-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .monster-month-card {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        .monster-month-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .monster-month-title {
+            font-size: 1.2rem;
+            color: var(--accent-color);
+        }
+
+        .monster-month-theme {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .monster-stock {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(71, 85, 105, 0.3);
+        }
+
+        .monster-stock:last-child {
+            border-bottom: none;
+        }
+
+        .monster-rank {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.85rem;
+            margin-right: 12px;
+        }
+
+        .monster-rank.rank-1 {
+            background: linear-gradient(135deg, #ffd700, #ffb700);
+            color: #000;
+        }
+
+        .monster-rank.rank-2 {
+            background: linear-gradient(135deg, #c0c0c0, #a0a0a0);
+            color: #000;
+        }
+
+        .monster-rank.rank-3 {
+            background: linear-gradient(135deg, #cd7f32, #b87333);
+            color: #fff;
+        }
+
+        .monster-info {
+            flex: 1;
+        }
+
+        .monster-name {
+            font-size: 1rem;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .monster-code {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .monster-theme-tag {
+            background: var(--bg-tertiary);
+            color: var(--accent-color);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            margin-right: 10px;
+        }
+
+        .monster-return {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--danger-color);
+        }
+
+        /* K线图样式 */
+        .kline-container {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid var(--border-color);
+        }
+
+        .search-box {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .search-box input {
+            flex: 1;
+            max-width: 300px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .search-box input:focus {
+            border-color: var(--accent-color);
+        }
+
+        .search-box button {
+            padding: 12px 28px;
+            border-radius: 8px;
+            border: none;
+            background: linear-gradient(135deg, var(--accent-color), var(--accent-secondary));
+            color: #000;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .search-box button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+        }
+
+        .search-box button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .stock-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 16px;
+            background: var(--bg-primary);
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .stock-info #stockName {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .stock-info #stockPrice {
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+
+        .stock-info #stockChange {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .stock-info .up {
+            color: var(--danger-color);
+            background: rgba(239, 68, 68, 0.15);
+        }
+
+        .stock-info .down {
+            color: var(--success-color);
+            background: rgba(34, 197, 94, 0.15);
+        }
+
+        .kline-chart {
+            width: 100%;
+            height: 500px;
+            background: var(--bg-primary);
+            border-radius: 8px;
+        }
+
+        .loading-tip {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border-color);
+            border-top-color: var(--accent-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-tip {
+            text-align: center;
+            padding: 20px;
+            color: var(--danger-color);
+            background: rgba(239, 68, 68, 0.1);
+            border-radius: 8px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        footer a {
+            color: var(--accent-color);
+            text-decoration: none;
+        }
+
+        @media (max-width: 768px) {
+            .nav-container {
+                flex-direction: column;
+                height: auto;
+                padding: 10px 0;
+                gap: 10px;
+            }
+
+            .nav-tabs {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .nav-tab {
+                padding: 8px 16px;
+                font-size: 0.85rem;
+            }
+
+            .calendar-grid, .monster-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .search-box {
+                flex-direction: column;
+            }
+
+            .search-box input {
+                max-width: 100%;
+            }
+
+            .kline-chart {
+                height: 350px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">📊 A股炒作分析系统</div>
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="switchPage('calendar')">📅 炒作日历</button>
+                <button class="nav-tab" onclick="switchPage('monsters')">🚀 月度妖股</button>
+                <button class="nav-tab" onclick="switchPage('kline')">📈 K线查询</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- 炒作日历模块 -->
+        <section id="calendar-section" class="page-section active">
+            <div class="card">
+                <div class="card-title">📅 A股月度炒作日历（基于真实数据）</div>
+                <div class="card-subtitle">
+                    📊 基于 <strong style="color: var(--accent-color);">申万行业指数 2023-2025年真实数据</strong> 统计分析，结合政策节点、财报周期
+                </div>
+                <div class="calendar-grid" id="calendarGrid"></div>
+            </div>
+        </section>
+
+        <!-- 月度妖股模块 -->
+        <section id="monsters-section" class="page-section">
+            <div class="card">
+                <div class="card-title">🚀 月度妖股排行榜</div>
+                <div class="card-subtitle">每月涨幅最高的明星股票，发现市场炒作主线</div>
+                
+                <div class="monster-filters">
+                    <button class="year-btn active" onclick="filterMonsters('all')">全部</button>
+                    <button class="year-btn" onclick="filterMonsters('2023')">2023年</button>
+                    <button class="year-btn" onclick="filterMonsters('2024')">2024年</button>
+                    <button class="year-btn" onclick="filterMonsters('2025')">2025年</button>
+                </div>
+                
+                <div class="monster-grid" id="monsterGrid"></div>
+            </div>
+        </section>
+
+        <!-- K线查询模块 -->
+        <section id="kline-section" class="page-section">
+            <div class="kline-container">
+                <div class="card-title">📈 个股K线图查询</div>
+                <div class="card-subtitle">输入股票代码验证数据准确性（如：000001、600519、300750）</div>
+                
+                <div class="search-box">
+                    <input type="text" id="stockCode" placeholder="输入股票代码（如 600519）" maxlength="6">
+                    <button onclick="searchStock()" id="searchBtn">查询</button>
+                </div>
+                <div id="stockInfo" class="stock-info" style="display: none;">
+                    <span id="stockName">--</span>
+                    <span id="stockPrice">--</span>
+                    <span id="stockChange">--</span>
+                </div>
+                <div id="klineChart" class="kline-chart"></div>
+                <div id="loadingTip" class="loading-tip" style="display: none;">
+                    <span class="loading-spinner"></span> 正在加载数据...
+                </div>
+                <div id="errorTip" class="error-tip" style="display: none;"></div>
+            </div>
+        </section>
+    </div>
+
+    <footer>
+        <p>数据来源：申万行业指数 / 腾讯财经 | 仅供学习研究，不构成投资建议</p>
+    </footer>
+
+    <script>
+        // 页面切换
+        function switchPage(page) {
+            // 更新导航按钮
+            document.querySelectorAll('.nav-tab').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // 更新页面显示
+            document.querySelectorAll('.page-section').forEach(section => section.classList.remove('active'));
+            document.getElementById(page + '-section').classList.add('active');
+        }
+
+        // ============ 炒作日历数据 ============
+        const calendarData = [
+            {
+                month: 1,
+                name: '一月',
+                emoji: '🏦',
+                theme: '银行领涨 · 开年布局',
+                color: '#ef4444',
+                confidence: '强规律',
+                sectors: ['银行', '家用电器', '非银金融', '有色金属'],
+                keyPoints: [
+                    '【数据】银行近3年1月平均+4.25%，上涨率100%',
+                    '【数据】家用电器近3年1月平均+2.03%',
+                    '【数据】非银金融近3年1月平均+1.88%',
+                    '【节点】年报预告期，关注业绩超预期个股'
+                ],
+                events: ['年报预告期', '春节备货季'],
+                warning: '注意年报业绩雷'
+            },
+            {
+                month: 2,
+                name: '二月',
+                emoji: '🚀',
+                theme: '春季躁动 · 科技爆发',
+                color: '#a855f7',
+                confidence: '强规律',
+                sectors: ['通信', '计算机', '机械设备', '传媒'],
+                keyPoints: [
+                    '【数据】通信近3年2月平均+10.34%，上涨率100%',
+                    '【数据】计算机近3年2月平均+9.90%，上涨率100%',
+                    '【数据】机械设备近3年2月平均+8.61%，上涨率100%',
+                    '【规律】春节后资金回流，科技板块春季躁动'
+                ],
+                events: ['中央一号文件', '春节后开市'],
+                warning: '涨幅巨大后注意回调风险'
+            },
+            {
+                month: 3,
+                name: '三月',
+                emoji: '🌸',
+                theme: '两会行情 · 传媒有色',
+                color: '#f97316',
+                confidence: '数据验证',
+                sectors: ['传媒', '有色金属', '石油石化', '通信'],
+                keyPoints: [
+                    '【数据】传媒近3年3月平均+5.43%',
+                    '【数据】有色金属近3年3月平均+3.86%，上涨率67%',
+                    '【数据】石油石化近3年3月平均+1.90%',
+                    '【节点】全国两会召开，关注政策受益方向'
+                ],
+                events: ['全国两会(3月初)', '3·15消费者日'],
+                warning: '两会期间波动加大'
+            },
+            {
+                month: 4,
+                name: '四月',
+                emoji: '📊',
+                theme: '年报验证 · 银行公用',
+                color: '#3b82f6',
+                confidence: '强规律',
+                sectors: ['银行', '公用事业', '家用电器', '建筑装饰'],
+                keyPoints: [
+                    '【数据】银行近3年4月平均+2.67%，上涨率100%',
+                    '【数据】公用事业近3年4月平均+1.21%，上涨率67%',
+                    '【数据】家用电器近3年4月平均+1.15%，上涨率67%',
+                    '【节点】年报+一季报披露(4/30截止)'
+                ],
+                events: ['年报披露截止(4/30)', '一季报披露'],
+                warning: '业绩雷集中期，规避问题股'
+            },
+            {
+                month: 5,
+                name: '五月',
+                emoji: '⚡',
+                theme: '公用事业 · 军工活跃',
+                color: '#22c55e',
+                confidence: '强规律',
+                sectors: ['公用事业', '国防军工', '银行', '环保'],
+                keyPoints: [
+                    '【数据】公用事业近3年5月平均+1.77%，上涨率100%',
+                    '【数据】国防军工近3年5月平均+1.64%，上涨率67%',
+                    '【数据】银行近3年5月平均+1.53%，上涨率67%',
+                    '【规律】迎峰度夏预期，电力板块确定性高'
+                ],
+                events: ['五一假期', '迎峰度夏启动'],
+                warning: '"五穷"效应，市场整体偏弱'
+            },
+            {
+                month: 6,
+                name: '六月',
+                emoji: '📱',
+                theme: '通信电子 · 科技反弹',
+                color: '#06b6d4',
+                confidence: '强规律',
+                sectors: ['通信', '电子', '国防军工', '汽车'],
+                keyPoints: [
+                    '【数据】通信近3年6月平均+8.61%，上涨率100%',
+                    '【数据】电子近3年6月平均+3.96%，上涨率100%',
+                    '【数据】国防军工近3年6月平均+3.53%，上涨率67%',
+                    '【节点】618电商节、中报预告期'
+                ],
+                events: ['618电商节', '中报预告开始'],
+                warning: '"六绝"效应，但科技股表现强'
+            },
+            {
+                month: 7,
+                name: '七月',
+                emoji: '🔥',
+                theme: '周期爆发 · 金融地产',
+                color: '#f59e0b',
+                confidence: '强规律',
+                sectors: ['钢铁', '非银金融', '建筑材料', '房地产'],
+                keyPoints: [
+                    '【数据】钢铁近3年7月平均+7.33%，上涨率67%',
+                    '【数据】非银金融近3年7月平均+7.28%，上涨率100%',
+                    '【数据】建筑材料近3年7月平均+5.67%，上涨率67%',
+                    '【节点】政治局会议(7月底)，政策预期'
+                ],
+                events: ['中报披露开始', '政治局会议'],
+                warning: '周期股波动大，注意止盈'
+            },
+            {
+                month: 8,
+                name: '八月',
+                emoji: '📡',
+                theme: '通信科技 · 中报验证',
+                color: '#8b5cf6',
+                confidence: '数据验证',
+                sectors: ['通信', '电子', '综合', '传媒'],
+                keyPoints: [
+                    '【数据】通信近3年8月平均+8.08%',
+                    '【数据】电子近3年8月平均+4.94%',
+                    '【数据】综合近3年8月平均+4.50%',
+                    '【节点】中报密集披露(8/31截止)'
+                ],
+                events: ['中报披露截止(8/31)', '暑期档'],
+                warning: '成交量易萎缩，注意流动性'
+            },
+            {
+                month: 9,
+                name: '九月',
+                emoji: '⚡',
+                theme: '金九行情 · 新能源爆发',
+                color: '#ef4444',
+                confidence: '强规律',
+                sectors: ['电气设备', '房地产', '计算机', '非银金融'],
+                keyPoints: [
+                    '【数据】电气设备近3年9月平均+14.74%，上涨率67%',
+                    '【数据】房地产近3年9月平均+13.81%，上涨率67%',
+                    '【数据】计算机近3年9月平均+11.06%',
+                    '【节点】国庆前政策窗口，历史大行情月份'
+                ],
+                events: ['中秋节', '国庆前政策窗口'],
+                warning: '涨幅巨大，追高风险高'
+            },
+            {
+                month: 10,
+                name: '十月',
+                emoji: '🎃',
+                theme: '节后震荡 · 防御为主',
+                color: '#78716c',
+                confidence: '数据验证',
+                sectors: ['综合', '环保', '轻工制造', '电子'],
+                keyPoints: [
+                    '【数据】综合近3年10月平均+1.90%，上涨率67%',
+                    '【数据】环保近3年10月平均+0.63%，上涨率67%',
+                    '【特点】整体表现弱，防御优先',
+                    '【节点】三季报披露期，业绩验证'
+                ],
+                events: ['国庆假期', '三季报披露'],
+                warning: '国庆外盘波动影响，控制仓位'
+            },
+            {
+                month: 11,
+                name: '十一月',
+                emoji: '🛍️',
+                theme: '消费崛起 · 题材活跃',
+                color: '#ec4899',
+                confidence: '强规律',
+                sectors: ['综合', '商业贸易', '传媒', '纺织服装'],
+                keyPoints: [
+                    '【数据】综合近3年11月平均+6.41%，上涨率100%',
+                    '【数据】商业贸易近3年11月平均+5.20%，上涨率67%',
+                    '【数据】传媒近3年11月平均+4.96%，上涨率67%',
+                    '【节点】双十一消费数据催化'
+                ],
+                events: ['双十一', '三季报收官'],
+                warning: '题材轮动快，及时止盈'
+            },
+            {
+                month: 12,
+                name: '十二月',
+                emoji: '🎄',
+                theme: '年末收官 · 通信家电',
+                color: '#14b8a6',
+                confidence: '数据验证',
+                sectors: ['通信', '银行', '家用电器', '公用事业'],
+                keyPoints: [
+                    '【数据】通信近3年12月平均+2.29%，上涨率67%',
+                    '【数据】银行近3年12月平均+1.05%',
+                    '【数据】家用电器近3年12月平均+0.72%，上涨率67%',
+                    '【节点】中央经济工作会议，布局来年'
+                ],
+                events: ['中央经济工作会议', '年报预告开始'],
+                warning: '年末流动性收紧，控制仓位'
+            }
+        ];
+
+        // 渲染炒作日历
+        function renderCalendar() {
+            const container = document.getElementById('calendarGrid');
+            container.innerHTML = '';
+
+            calendarData.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'month-card';
+                card.style.setProperty('--card-color', item.color);
+
+                card.innerHTML = `
+                    <div class="month-header">
+                        <div class="month-title">
+                            <span class="month-emoji">${item.emoji}</span>
+                            <div class="month-info">
+                                <h3>${item.name}</h3>
+                                <div class="month-theme">${item.theme}</div>
+                            </div>
+                        </div>
+                        <span class="confidence-badge">${item.confidence}</span>
+                    </div>
+
+                    <div class="sectors-section">
+                        <div class="section-label">🎯 主力板块</div>
+                        <div class="sector-tags">
+                            ${item.sectors.map(s => `<span class="sector-tag">${s}</span>`).join('')}
+                        </div>
+                    </div>
+
+                    <div class="key-points">
+                        <div class="section-label">💡 核心要点</div>
+                        <ul>
+                            ${item.keyPoints.map(p => `<li>${p}</li>`).join('')}
+                        </ul>
+                    </div>
+
+                    <div class="events-section">
+                        ${item.events.map(e => `<span class="event-tag">📌 ${e}</span>`).join('')}
+                    </div>
+
+                    <div class="warning-section">${item.warning}</div>
+                `;
+
+                container.appendChild(card);
+            });
+        }
+
+        // ============ 妖股数据 ============
+        let monsterData = null;
+        let currentYearFilter = 'all';
+
+        // 加载妖股数据
+        async function loadMonsterData() {
+            try {
+                const response = await fetch('data/monster_stocks.json');
+                monsterData = await response.json();
+                renderMonsters();
+            } catch (error) {
+                console.error('加载妖股数据失败:', error);
+            }
+        }
+
+        // 筛选妖股
+        function filterMonsters(year) {
+            currentYearFilter = year;
+            document.querySelectorAll('.monster-filters .year-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            renderMonsters();
+        }
+
+        // 渲染妖股
+        function renderMonsters() {
+            if (!monsterData) return;
+            
+            const container = document.getElementById('monsterGrid');
+            container.innerHTML = '';
+            
+            const monsters = monsterData.monthly_monsters;
+            let months = Object.keys(monsters).sort().reverse();
+            
+            if (currentYearFilter !== 'all') {
+                months = months.filter(m => m.startsWith(currentYearFilter));
+            }
+            
+            months.forEach(month => {
+                const stocks = monsters[month];
+                const themes = stocks.map(s => s.theme);
+                const mainTheme = themes[0];
+                
+                const card = document.createElement('div');
+                card.className = 'monster-month-card';
+                
+                card.innerHTML = `
+                    <div class="monster-month-header">
+                        <div class="monster-month-title">📅 ${month}</div>
+                        <div class="monster-month-theme">主题: ${mainTheme}</div>
+                    </div>
+                    ${stocks.map((stock, idx) => `
+                        <div class="monster-stock" onclick="searchStockByCode('${stock.code}')">
+                            <div class="monster-rank rank-${idx + 1}">${idx + 1}</div>
+                            <div class="monster-info">
+                                <div class="monster-name">${stock.name}</div>
+                                <div class="monster-code">${stock.code}</div>
+                            </div>
+                            <span class="monster-theme-tag">${stock.theme}</span>
+                            <div class="monster-return">+${stock.return}%</div>
+                        </div>
+                    `).join('')}
+                `;
+                
+                container.appendChild(card);
+            });
+        }
+
+        // 点击妖股跳转查询
+        function searchStockByCode(code) {
+            document.getElementById('stockCode').value = code;
+            switchPageTo('kline');
+            searchStock();
+        }
+
+        function switchPageTo(page) {
+            document.querySelectorAll('.nav-tab').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent.includes(page === 'calendar' ? '日历' : page === 'monsters' ? '妖股' : 'K线')) {
+                    btn.classList.add('active');
+                }
+            });
+            document.querySelectorAll('.page-section').forEach(section => section.classList.remove('active'));
+            document.getElementById(page + '-section').classList.add('active');
+        }
+
+        // ============ K线图功能 ============
+        let klineChart = null;
+        let rawData = null;
+
+        document.getElementById('stockCode').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchStock();
+            }
+        });
+
+        async function searchStock() {
+            const code = document.getElementById('stockCode').value.trim();
+            if (!code) {
+                showError('请输入股票代码');
+                return;
+            }
+
+            if (!/^\d{6}$/.test(code)) {
+                showError('请输入6位数字股票代码');
+                return;
+            }
+
+            const btn = document.getElementById('searchBtn');
+            btn.disabled = true;
+            btn.textContent = '查询中...';
+
+            document.getElementById('loadingTip').style.display = 'block';
+            document.getElementById('errorTip').style.display = 'none';
+            document.getElementById('stockInfo').style.display = 'none';
+            document.getElementById('klineChart').style.display = 'none';
+
+            try {
+                const response = await fetch(`/api/kline?code=${code}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                showStockInfo(data);
+                renderKlineChart(data);
+
+            } catch (error) {
+                showError(error.message || '获取数据失败，请检查股票代码');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '查询';
+                document.getElementById('loadingTip').style.display = 'none';
+            }
+        }
+
+        function showStockInfo(data) {
+            document.getElementById('stockInfo').style.display = 'flex';
+            document.getElementById('stockName').textContent = `${data.name} (${data.code})`;
+            document.getElementById('stockPrice').textContent = `¥${data.price.toFixed(2)}`;
+            
+            const changeEl = document.getElementById('stockChange');
+            const changeText = data.change >= 0 ? `+${data.change.toFixed(2)}%` : `${data.change.toFixed(2)}%`;
+            changeEl.textContent = changeText;
+            changeEl.className = data.change >= 0 ? 'up' : 'down';
+        }
+
+        function renderKlineChart(data) {
+            const chartDom = document.getElementById('klineChart');
+            chartDom.style.display = 'block';
+
+            if (klineChart) {
+                klineChart.dispose();
+            }
+            klineChart = echarts.init(chartDom);
+
+            const dates = data.kline.map(item => item.date);
+            const ohlc = data.kline.map(item => [item.open, item.close, item.low, item.high]);
+            const volumes = data.kline.map(item => item.volume);
+            rawData = data.kline;
+
+            const ma5 = calculateMA(5, data.kline);
+            const ma10 = calculateMA(10, data.kline);
+            const ma20 = calculateMA(20, data.kline);
+
+            const option = {
+                backgroundColor: '#0f172a',
+                title: {
+                    text: `${data.name} 日K线图`,
+                    left: 'center',
+                    textStyle: { color: '#f1f5f9', fontSize: 16 }
+                },
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: { type: 'cross' },
+                    backgroundColor: 'rgba(30, 41, 59, 0.95)',
+                    borderColor: '#475569',
+                    textStyle: { color: '#f1f5f9' },
+                    formatter: function(params) {
+                        const klineData = params.find(p => p.seriesName === 'K线');
+                        if (!klineData) return '';
+                        const idx = klineData.dataIndex;
+                        const item = rawData[idx];
+                        if (!item) return '';
+                        const changeVal = item.close - item.open;
+                        const changePercent = (changeVal / item.open * 100).toFixed(2);
+                        const changeColor = changeVal >= 0 ? '#ef4444' : '#22c55e';
+                        return `
+                            <div style="font-weight: bold; margin-bottom: 8px; font-size: 14px;">${item.date}</div>
+                            <div style="display: grid; grid-template-columns: 50px 80px; gap: 4px;">
+                                <span style="color: #94a3b8;">开盘:</span><span>${item.open.toFixed(2)}</span>
+                                <span style="color: #94a3b8;">收盘:</span><span style="color: ${changeColor}; font-weight: bold;">${item.close.toFixed(2)}</span>
+                                <span style="color: #94a3b8;">最高:</span><span style="color: #ef4444;">${item.high.toFixed(2)}</span>
+                                <span style="color: #94a3b8;">最低:</span><span style="color: #22c55e;">${item.low.toFixed(2)}</span>
+                                <span style="color: #94a3b8;">涨跌:</span><span style="color: ${changeColor};">${changeVal >= 0 ? '+' : ''}${changePercent}%</span>
+                            </div>
+                        `;
+                    }
+                },
+                legend: {
+                    data: ['K线', 'MA5', 'MA10', 'MA20'],
+                    top: 30,
+                    textStyle: { color: '#94a3b8' }
+                },
+                grid: [
+                    { left: '8%', right: '3%', top: '15%', height: '55%' },
+                    { left: '8%', right: '3%', top: '75%', height: '15%' }
+                ],
+                xAxis: [
+                    {
+                        type: 'category',
+                        data: dates,
+                        gridIndex: 0,
+                        axisLine: { lineStyle: { color: '#475569' } },
+                        axisLabel: { color: '#94a3b8' },
+                        splitLine: { show: false }
+                    },
+                    {
+                        type: 'category',
+                        data: dates,
+                        gridIndex: 1,
+                        axisLine: { lineStyle: { color: '#475569' } },
+                        axisLabel: { show: false },
+                        splitLine: { show: false }
+                    }
+                ],
+                yAxis: [
+                    {
+                        type: 'value',
+                        gridIndex: 0,
+                        axisLine: { lineStyle: { color: '#475569' } },
+                        axisLabel: { color: '#94a3b8' },
+                        splitLine: { lineStyle: { color: '#334155' } }
+                    },
+                    {
+                        type: 'value',
+                        gridIndex: 1,
+                        axisLine: { lineStyle: { color: '#475569' } },
+                        axisLabel: { show: false },
+                        splitLine: { show: false }
+                    }
+                ],
+                dataZoom: [
+                    { type: 'inside', xAxisIndex: [0, 1], start: 70, end: 100 },
+                    {
+                        type: 'slider',
+                        xAxisIndex: [0, 1],
+                        start: 70,
+                        end: 100,
+                        height: 20,
+                        bottom: 5,
+                        borderColor: '#475569',
+                        fillerColor: 'rgba(245, 158, 11, 0.2)',
+                        handleStyle: { color: '#f59e0b' },
+                        textStyle: { color: '#94a3b8' }
+                    }
+                ],
+                series: [
+                    {
+                        name: 'K线',
+                        type: 'candlestick',
+                        data: ohlc,
+                        xAxisIndex: 0,
+                        yAxisIndex: 0,
+                        itemStyle: {
+                            color: '#ef4444',
+                            color0: '#22c55e',
+                            borderColor: '#ef4444',
+                            borderColor0: '#22c55e'
+                        }
+                    },
+                    {
+                        name: 'MA5',
+                        type: 'line',
+                        data: ma5,
+                        smooth: true,
+                        showSymbol: false,
+                        lineStyle: { width: 1, color: '#f59e0b' }
+                    },
+                    {
+                        name: 'MA10',
+                        type: 'line',
+                        data: ma10,
+                        smooth: true,
+                        showSymbol: false,
+                        lineStyle: { width: 1, color: '#06b6d4' }
+                    },
+                    {
+                        name: 'MA20',
+                        type: 'line',
+                        data: ma20,
+                        smooth: true,
+                        showSymbol: false,
+                        lineStyle: { width: 1, color: '#a855f7' }
+                    },
+                    {
+                        name: '成交量',
+                        type: 'bar',
+                        data: volumes.map((v, i) => ({
+                            value: v,
+                            itemStyle: {
+                                color: ohlc[i][1] >= ohlc[i][0] ? '#ef4444' : '#22c55e'
+                            }
+                        })),
+                        xAxisIndex: 1,
+                        yAxisIndex: 1
+                    }
+                ]
+            };
+
+            klineChart.setOption(option);
+            window.addEventListener('resize', () => klineChart && klineChart.resize());
+        }
+
+        function calculateMA(dayCount, data) {
+            const result = [];
+            for (let i = 0; i < data.length; i++) {
+                if (i < dayCount - 1) {
+                    result.push('-');
+                    continue;
+                }
+                let sum = 0;
+                for (let j = 0; j < dayCount; j++) {
+                    sum += data[i - j].close;
+                }
+                result.push((sum / dayCount).toFixed(2));
+            }
+            return result;
+        }
+
+        function showError(msg) {
+            const errorTip = document.getElementById('errorTip');
+            errorTip.textContent = msg;
+            errorTip.style.display = 'block';
+        }
+
+        // 初始化
+        renderCalendar();
+        loadMonsterData();
+    </script>
+</body>
+</html>
